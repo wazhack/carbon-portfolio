@@ -53,6 +53,7 @@ export interface PurchaseItem {
   categoryName: string;
   carbonKg: number;
   emoji: string;
+  unit?: string; // unité par défaut, sinon "km", "kg", "kWh"…
 }
 
 export interface Purchase {
