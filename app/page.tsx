@@ -7,6 +7,7 @@ import { Home, Zap, Clock, Leaf, LogOut, User } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { QuickStartQuestionnaire } from '@/components/onboarding/QuickStartQuestionnaire';
+import { ProfileResults } from '@/components/dashboard/ProfileResults';
 import { CarbonGauge } from '@/components/dashboard/CarbonGauge';
 import { QuickStats } from '@/components/dashboard/QuickStats';
 import { EmissionsBreakdown } from '@/components/dashboard/EmissionsBreakdown';
@@ -107,6 +108,10 @@ export default function Page() {
 
   if (view === 'onboarding') {
     return <QuickStartQuestionnaire userName={userName} />;
+  }
+
+  if (view === 'results') {
+    return <ProfileResults />;
   }
 
   return (

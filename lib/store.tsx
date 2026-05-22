@@ -5,7 +5,7 @@ import { UserProfile, Purchase, PurchaseItem, OnboardingPayload, FootprintBreakd
 import { ANNUAL_BUDGET_KG } from './carbonData';
 import { calculateDetailedFootprint } from './carbonCalculator';
 
-type AppView = 'onboarding' | 'dashboard';
+type AppView = 'onboarding' | 'results' | 'dashboard';
 
 const EMPTY_BREAKDOWN: FootprintBreakdown = { car: 0, flight: 0, housing: 0, diet: 0, digital: 0, total: 0 };
 
@@ -19,6 +19,7 @@ interface AppState {
 
 type Action =
   | { type: 'COMPLETE_ONBOARDING'; payload: OnboardingPayload }
+  | { type: 'GO_TO_DASHBOARD' }
   | { type: 'ADD_PURCHASE'; payload: PurchaseItem }
   | { type: 'REMOVE_PURCHASE'; payload: string }
   | { type: 'RESET' };
@@ -38,12 +39,14 @@ function reducer(state: AppState, action: Action): AppState {
       const profile: UserProfile = { ...action.payload, initialFootprint: breakdown.total, breakdown };
       return {
         ...state,
-        view: 'dashboard',
+        view: 'results',
         profile,
         totalSpent: breakdown.total,
         remainingBudget: Math.max(0, ANNUAL_BUDGET_KG - breakdown.total),
       };
     }
+    case 'GO_TO_DASHBOARD':
+      return { ...state, view: 'dashboard' };
     case 'ADD_PURCHASE': {
       const newPurchase: Purchase = {
         id: Date.now().toString(),

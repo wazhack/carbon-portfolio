@@ -1,7 +1,15 @@
 // Facteurs d'émission — Source : ADEME / Nos Gestes Climat (nosgestesclimat.fr)
 import { Category } from '@/types';
 
-export const ANNUAL_BUDGET_KG = 2000; // kg CO₂e — objectif 2t/an/personne (2030)
+export const ANNUAL_BUDGET_KG = 2000; // kg CO₂e — objectif 2t/an/personne (2050)
+
+// ─── Références mondiales ─────────────────────────────────────────────────────
+// Sources : ADEME (2022), Global Carbon Project (2022), SNBC France
+export const FRANCE_AVERAGE_KG = 9200;  // kg CO₂e/an/personne — France (ADEME 2022, scope 3)
+export const WORLD_AVERAGE_KG  = 6000;  // kg CO₂e/an/personne — Monde (GCP 2022)
+export const EU_AVERAGE_KG     = 7200;  // kg CO₂e/an/personne — UE27 (Eurostat 2022)
+export const TARGET_2030_KG    = 4000;  // trajectoire SNBC — objectif intermédiaire France 2030
+export const TARGET_2050_KG    = 2000;  // objectif net-zéro — Accord de Paris +2 °C
 
 // ─── Transport — voiture ──────────────────────────────────────────────────────
 // kg CO₂e / km (fabrication amortie + usage)
