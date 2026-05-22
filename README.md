@@ -8,22 +8,30 @@ Une **Progressive Web App Mobile-First** pour calculer son empreinte carbone ann
 
 ## Aperçu
 
-| Dashboard | Questionnaire | Simulateur |
-|-----------|--------------|------------|
-| Jauge SVG + breakdown par poste | 12 questions / 5 sections | Recherche + impact instantané |
+| Écran | Description |
+|-------|-------------|
+| **Sélecteur de mode** | Estimation rapide (5 min) ou Bilan détaillé (10 min) |
+| **Questionnaire** | 14–16 questions / 5 sections avec skip logic et auto-avancement |
+| **Résultats** | Empreinte vs France, UE, Monde, objectifs 2030 et 2050 |
+| **Dashboard** | Jauge SVG + breakdown par poste + stats |
+| **Simulateur** | Catalogue d'achats par catégorie, impact instantané |
+| **Historique** | Liste des achats validés, suppression individuelle |
 
 ---
 
 ## Fonctionnalités
 
-- **Questionnaire de profil** — 12 questions organisées en 5 sections (voiture, avion, logement, alimentation, numérique), avec skip logic et auto-avancement
-- **Calcul détaillé** — 5 postes calculés séparément avec les facteurs d'émission ADEME (kg CO₂e)
+- **Authentification** — email/mot de passe (compte local) ou Google OAuth, mode invité sans compte
+- **Questionnaire de profil** — 14-16 questions en 5 sections (voiture, avion, logement, alimentation, numérique + électroménager)
+- **Deux modes de calcul** — Estimation rapide (valeurs par défaut) ou Bilan détaillé (ancienneté des appareils pour amortissement réel)
+- **Calcul détaillé** — 5 postes calculés séparément avec les facteurs ADEME
+  - Appareils partagés (TV, lave-linge, frigo…) divisés par le nombre de personnes du foyer
+  - Amortissement de fabrication ajusté selon l'ancienneté des appareils (mode détaillé)
+- **Écran de résultats** — comparaison France (9,2 t), UE (7,2 t), Monde (6 t), objectif 2030 (4 t) et 2050 (2 t)
 - **Jauge visuelle** — arc SVG animé, couleur dynamique selon le budget restant
 - **Breakdown par poste** — barres de progression par catégorie d'émission
-- **Simulateur d'achat** — recherche par catégorie, équivalences vulgarisées, boutons "Valider" / "Renoncer"
-- **Historique** — liste des achats carbone validés, suppression individuelle
-- **Authentification** — Google et GitHub via NextAuth.js, mode invité sans compte
-- **Persistance** — état sauvegardé en `localStorage` (pas de backend requis pour le MVP)
+- **Simulateur d'achat** — 5 catégories (électronique, mode, repas, électroménager, voyage), recherche, équivalences vulgarisées
+- **Persistance** — état sauvegardé en `localStorage` + comptes stockés en base SQLite
 - **PWA ready** — manifest.json, thème couleur, standalone display
 
 ---
@@ -35,10 +43,11 @@ Une **Progressive Web App Mobile-First** pour calculer son empreinte carbone ann
 | Framework | [Next.js 13.5](https://nextjs.org/) (App Router) |
 | UI | [React 18](https://react.dev/) + [Tailwind CSS 3](https://tailwindcss.com/) |
 | Icônes | [Lucide React](https://lucide.dev/) |
-| Auth | [NextAuth.js v4](https://next-auth.js.org/) |
+| Auth | [NextAuth.js v4](https://next-auth.js.org/) — Email/Password + Google OAuth |
+| Base de données | [Prisma 5](https://prisma.io/) + SQLite (local) |
 | État | React Context + `useReducer` |
 | Langage | TypeScript 5 |
-| Runtime | Node.js ≥ 16.8 |
+| Runtime | Node.js ≥ 16.13 |
 
 ---
 
@@ -49,7 +58,9 @@ carbon-portfolio/
 │
 ├── app/                              # Next.js App Router
 │   ├── api/auth/[...nextauth]/       # Route NextAuth
+│   ├── api/auth/register/            # POST — création de compte email
 │   ├── login/                        # Page de connexion
+│   ├── register/                     # Page d'inscription
 │   ├── globals.css                   # Tailwind directives + utilitaires
 │   ├── layout.tsx                    # Root layout (SessionProvider, AppProvider)
 │   └── page.tsx                      # Page principale (guard auth + navigation)
@@ -58,10 +69,12 @@ carbon-portfolio/
 │   ├── dashboard/
 │   │   ├── CarbonGauge.tsx           # Jauge SVG semicirculaire animée
 │   │   ├── EmissionsBreakdown.tsx    # Breakdown par poste (barres %)
+│   │   ├── ProfileResults.tsx        # Écran de résultats post-questionnaire
 │   │   ├── PurchaseHistory.tsx       # Liste des achats validés
 │   │   └── QuickStats.tsx            # Cartes stats (total, %, km équivalent)
 │   ├── onboarding/
-│   │   └── QuickStartQuestionnaire.tsx  # Wizard 12 questions / 5 sections
+│   │   ├── ModeSelector.tsx          # Choix estimation rapide / bilan détaillé
+│   │   └── QuickStartQuestionnaire.tsx  # Wizard 14–16 questions / 5 sections
 │   ├── providers/
 │   │   └── SessionProvider.tsx       # Wrapper client NextAuth SessionProvider
 │   ├── simulator/
@@ -71,11 +84,16 @@ carbon-portfolio/
 │       └── Card.tsx                  # Carte blanche avec hover effect
 │
 ├── lib/
-│   ├── auth.ts                       # Config NextAuth (providers Google + GitHub)
+│   ├── auth.ts                       # Config NextAuth (Google + Credentials)
 │   ├── carbonCalculator.ts           # Calculs d'empreinte par poste
-│   ├── carbonData.ts                 # Facteurs ADEME + catalogue d'achats (mock)
+│   ├── carbonData.ts                 # Facteurs ADEME + catalogue d'achats + benchmarks
+│   ├── prisma.ts                     # Client Prisma (singleton)
 │   ├── store.tsx                     # Context global + useReducer + localStorage
 │   └── utils.ts                      # Helper cn() pour les classes Tailwind
+│
+├── prisma/
+│   ├── schema.prisma                 # Modèles User, Account, Session
+│   └── dev.db                        # Base SQLite locale (gitignorée)
 │
 ├── types/
 │   └── index.ts                      # Interfaces TypeScript (UserProfile, Purchase…)
@@ -86,7 +104,6 @@ carbon-portfolio/
 ├── .env.local.example                # Template des variables d'environnement
 ├── next.config.js
 ├── tailwind.config.ts
-├── postcss.config.js
 └── tsconfig.json
 ```
 
@@ -108,10 +125,23 @@ carbon-portfolio/
 | `householdSize` | `number` | Nombre de personnes dans le foyer |
 | `dietType` | `vegan \| vegetarian \| flexitarian \| carnivore` | Régime alimentaire |
 | `localFoodRatio` | `0 – 1` | Part d'alimentation locale/bio |
-| `devices` | `DeviceType[]` | Appareils numériques |
+| `devices` | `DeviceType[]` | Appareils numériques + électroménager |
 | `streamingHoursPerDay` | `number` | Heures de streaming quotidien |
+| `mode` | `quick \| detailed` | Mode du questionnaire |
+| `digitalAgeGroup` | `new \| mid \| old \| very-old` | Ancienneté équipements numériques (mode détaillé) |
+| `applianceAgeGroup` | `new \| mid \| old \| very-old` | Ancienneté électroménager (mode détaillé) |
 | `initialFootprint` | `number` | Total calculé (kg CO₂e/an) |
 | `breakdown` | `FootprintBreakdown` | Détail par poste |
+
+### Références de comparaison
+
+| Référence | Valeur | Source |
+|-----------|--------|--------|
+| France moyenne | 9 200 kg CO₂e/an | ADEME 2022 (scope 3) |
+| UE27 moyenne | 7 200 kg CO₂e/an | Eurostat 2022 |
+| Monde moyenne | 6 000 kg CO₂e/an | Global Carbon Project 2022 |
+| Objectif 2030 | 4 000 kg CO₂e/an | SNBC France (trajectoire) |
+| Objectif 2050 | 2 000 kg CO₂e/an | Accord de Paris +2 °C |
 
 ### Facteurs d'émission utilisés (ADEME)
 
@@ -128,6 +158,9 @@ carbon-portfolio/
 | Régime omnivore | 2 500 kg CO₂e / an |
 | Régime végétalien | 900 kg CO₂e / an |
 | Streaming vidéo | 0,036 kg CO₂e / heure |
+| Machine à laver | 25 kg CO₂e / an |
+| Sèche-linge | 35 kg CO₂e / an |
+| Réfrigérateur | 28 kg CO₂e / an |
 
 ---
 
@@ -135,7 +168,7 @@ carbon-portfolio/
 
 ### Prérequis
 
-- **Node.js** ≥ 16.8 (testé avec 16.15.1)
+- **Node.js** ≥ 16.13 (testé avec 16.15.1)
 - **npm** ≥ 8
 
 ### 1. Cloner le projet
@@ -163,18 +196,23 @@ cp .env.local.example .env.local
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=votre-secret-ici   # générez avec: openssl rand -base64 32
 
-# Google OAuth — https://console.cloud.google.com/apis/credentials
+# Base de données SQLite locale
+DATABASE_URL="file:./prisma/dev.db"
+
+# Google OAuth (optionnel) — https://console.cloud.google.com/apis/credentials
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-
-# GitHub OAuth — https://github.com/settings/applications/new
-GITHUB_ID=
-GITHUB_SECRET=
 ```
 
-> **Sans clés OAuth**, utilisez le bouton **"Continuer sans compte"** sur la page de login pour accéder directement à l'app en mode invité.
+### 4. Initialiser la base de données
 
-### 4. Lancer en développement
+```bash
+npx prisma db push
+```
+
+Crée le fichier `prisma/dev.db` avec toutes les tables.
+
+### 5. Lancer en développement
 
 ```bash
 npm run dev
@@ -182,7 +220,9 @@ npm run dev
 
 L'app est disponible sur [http://localhost:3000](http://localhost:3000).
 
-### 5. Build de production
+> **Sans clés Google**, utilisez le bouton **"Continuer sans compte"** ou créez un compte email directement sur `/register`.
+
+### 6. Build de production
 
 ```bash
 npm run build
@@ -191,20 +231,20 @@ npm start
 
 ---
 
-## Configurer les providers OAuth (optionnel)
+## Authentification
 
-### Google
+### Compte email (local)
+
+1. Accédez à `/register`
+2. Entrez votre prénom (optionnel), email et mot de passe (8 caractères min.)
+3. Le mot de passe est haché avec **bcrypt** (12 rounds) avant stockage
+4. Connectez-vous via `/login`
+
+### Google OAuth (optionnel)
 
 1. Allez sur [console.cloud.google.com](https://console.cloud.google.com/apis/credentials)
 2. Créez un **OAuth 2.0 Client ID** de type "Web application"
 3. Ajoutez `http://localhost:3000/api/auth/callback/google` dans les **Authorized redirect URIs**
-4. Copiez Client ID et Client Secret dans `.env.local`
-
-### GitHub
-
-1. Allez sur [github.com/settings/applications/new](https://github.com/settings/applications/new)
-2. **Homepage URL** : `http://localhost:3000`
-3. **Authorization callback URL** : `http://localhost:3000/api/auth/callback/github`
 4. Copiez Client ID et Client Secret dans `.env.local`
 
 ---
@@ -217,8 +257,11 @@ npm start
 |---------|---------|------|
 | `next` | 13.5.6 | Framework React fullstack |
 | `react` | ^18.3 | UI library |
-| `react-dom` | ^18.3 | Rendu DOM React |
-| `next-auth` | ^4.24.7 | Authentification OAuth |
+| `next-auth` | ^4.24.7 | Authentification OAuth + Credentials |
+| `@next-auth/prisma-adapter` | 1.0.7 | Adaptateur Prisma pour NextAuth |
+| `prisma` | 5.7 | ORM + migrations |
+| `@prisma/client` | 5.7 | Client Prisma généré |
+| `bcryptjs` | latest | Hachage de mots de passe |
 | `lucide-react` | ^0.395 | Icônes SVG |
 
 ### Dev / Build
@@ -227,30 +270,24 @@ npm start
 |---------|---------|------|
 | `typescript` | ^5.4 | Typage statique |
 | `tailwindcss` | ^3.4 | CSS utilitaire |
-| `postcss` | ^8.4 | Pipeline CSS |
-| `autoprefixer` | ^10.4 | Préfixes CSS cross-browser |
-| `@types/react` | ^18.3 | Types React |
-| `@types/node` | ^20.14 | Types Node.js |
+| `@types/bcryptjs` | latest | Types bcryptjs |
 
 ---
 
 ## Objectif carbone
 
-L'objectif de **2 tonnes de CO₂e / an / personne** correspond à la trajectoire de l'Accord de Paris pour limiter le réchauffement à +1,5 °C d'ici 2100.
-
-En France, l'empreinte carbone moyenne est d'environ **9 tonnes / an / personne** (scope 3 inclus). Le chemin est long — chaque geste compte.
+L'objectif de **2 tonnes de CO₂e / an / personne** correspond à la trajectoire de l'Accord de Paris pour limiter le réchauffement à +2 °C d'ici 2100. En France, l'empreinte carbone moyenne est d'environ **9,2 tonnes / an / personne** (scope 3 inclus, ADEME 2022).
 
 ---
 
-## Roadmap (idées pour la suite)
+## Roadmap
 
-- [ ] Persistance cloud (Supabase / PlanetScale) liée au compte utilisateur
-- [ ] Intégration API officielle Nos Gestes Climat (ADEME)
-- [ ] Comparaison avec la moyenne nationale
+- [ ] Migration vers PostgreSQL pour la production (Supabase / PlanetScale)
+- [ ] Enrichissement du catalogue d'achats (données utilisateur)
 - [ ] Suggestions de réduction personnalisées
+- [ ] Comparaison avec la moyenne nationale sur le dashboard
 - [ ] Partage de son bilan (carte de résumé)
 - [ ] Mode famille (partage du budget entre plusieurs profils)
-- [ ] Notifications push (rappels hebdomadaires)
 
 ---
 
