@@ -123,7 +123,7 @@ export default function Page() {
             <Leaf className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="font-bold text-slate-800 text-sm leading-none">Portefeuille Carbone</p>
+            <p className="font-bold text-slate-800 text-sm leading-none">Mon Portefeuille Carbone</p>
             {userName && (
               <p className="text-[11px] text-slate-400 mt-0.5">Bonjour, {userName}</p>
             )}

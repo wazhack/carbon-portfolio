@@ -1,13 +1,23 @@
 'use client';
 
+import { useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Leaf } from 'lucide-react';
+import Link from 'next/link';
+import { Leaf, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const { status } = useSession();
   const router = useRouter();
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [showPwd, setShowPwd] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Message de confirmation après inscription
+  const registered = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('registered') === '1';
 
   useEffect(() => {
     if (status === 'authenticated') router.push('/');
@@ -15,10 +25,31 @@ export default function LoginPage() {
 
   if (status === 'loading') return null;
 
+  const handleCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    const res = await signIn('credentials', {
+      email: form.email,
+      password: form.password,
+      redirect: false,
+    });
+
+    setLoading(false);
+
+    if (res?.error) {
+      setError('Email ou mot de passe incorrect.');
+      return;
+    }
+
+    router.push('/');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white flex flex-col items-center justify-center px-6">
       {/* Logo */}
-      <div className="flex flex-col items-center mb-10">
+      <div className="flex flex-col items-center mb-8">
         <div className="w-16 h-16 bg-emerald-500 rounded-3xl flex items-center justify-center shadow-xl shadow-emerald-200 mb-5">
           <Leaf className="w-8 h-8 text-white" />
         </div>
@@ -30,13 +61,78 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Auth buttons */}
       <div className="w-full max-w-sm space-y-3">
+        {/* Message après inscription */}
+        {registered && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 text-sm text-emerald-700 font-medium">
+            Compte créé ! Connectez-vous maintenant.
+          </div>
+        )}
+
+        {/* Formulaire email / mot de passe */}
+        <form onSubmit={handleCredentials} className="space-y-3">
+          <div>
+            <input
+              type="email"
+              autoComplete="email"
+              required
+              value={form.email}
+              onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+              placeholder="Email"
+              className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent transition-all"
+            />
+          </div>
+          <div className="relative">
+            <input
+              type={showPwd ? 'text' : 'password'}
+              autoComplete="current-password"
+              required
+              value={form.password}
+              onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+              placeholder="Mot de passe"
+              className="w-full px-4 py-3.5 pr-12 bg-white border border-slate-200 rounded-2xl text-sm placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent transition-all"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPwd(v => !v)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+
+          {error && (
+            <p className="text-sm text-rose-500 bg-rose-50 px-4 py-2.5 rounded-2xl">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white font-semibold rounded-2xl transition-all duration-200 active:scale-[0.98]"
+          >
+            {loading ? 'Connexion…' : 'Se connecter'}
+          </button>
+        </form>
+
+        <p className="text-center text-sm text-slate-400">
+          Pas encore de compte ?{' '}
+          <Link href="/register" className="text-emerald-600 font-medium hover:underline">
+            Créer un compte
+          </Link>
+        </p>
+
+        {/* Séparateur */}
+        <div className="flex items-center gap-3 my-2">
+          <div className="flex-1 h-px bg-slate-200" />
+          <span className="text-xs text-slate-300">ou</span>
+          <div className="flex-1 h-px bg-slate-200" />
+        </div>
+
+        {/* Google */}
         <button
           onClick={() => signIn('google', { callbackUrl: '/' })}
           className="w-full flex items-center justify-center gap-3 p-4 bg-white border-2 border-slate-200 rounded-2xl font-semibold text-slate-700 hover:border-slate-300 hover:shadow-sm transition-all duration-200 active:scale-95"
         >
-          {/* Google G icon */}
           <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -46,25 +142,7 @@ export default function LoginPage() {
           Continuer avec Google
         </button>
 
-        <button
-          onClick={() => signIn('github', { callbackUrl: '/' })}
-          className="w-full flex items-center justify-center gap-3 p-4 bg-slate-900 rounded-2xl font-semibold text-white hover:bg-slate-800 transition-all duration-200 active:scale-95"
-        >
-          {/* GitHub mark */}
-          <svg className="w-5 h-5 flex-shrink-0 fill-white" viewBox="0 0 24 24">
-            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
-          </svg>
-          Continuer avec GitHub
-        </button>
-      </div>
-
-      {/* Guest access */}
-      <div className="w-full max-w-sm mt-2">
-        <div className="flex items-center gap-3 my-4">
-          <div className="flex-1 h-px bg-slate-200" />
-          <span className="text-xs text-slate-300">ou</span>
-          <div className="flex-1 h-px bg-slate-200" />
-        </div>
+        {/* Mode invité */}
         <button
           onClick={() => {
             localStorage.setItem('mpc-guest', '1');
@@ -76,9 +154,8 @@ export default function LoginPage() {
         </button>
       </div>
 
-      <p className="text-xs text-slate-300 mt-4 text-center max-w-xs leading-relaxed">
+      <p className="text-xs text-slate-300 mt-6 text-center max-w-xs leading-relaxed">
         Vos données restent privées et ne sont jamais partagées.
-        Aucune carte bancaire requise.
       </p>
     </div>
   );
