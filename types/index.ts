@@ -32,7 +32,15 @@ export interface UserProfile {
   breakdown: FootprintBreakdown;
 }
 
-export type OnboardingPayload = Omit<UserProfile, 'initialFootprint' | 'breakdown'>;
+export type QuestionnaireMode = 'quick' | 'detailed';
+
+export type DeviceAgeGroup = 'new' | 'mid' | 'old' | 'very-old';
+
+export type OnboardingPayload = Omit<UserProfile, 'initialFootprint' | 'breakdown'> & {
+  mode?: QuestionnaireMode;
+  digitalAgeGroup?: DeviceAgeGroup;
+  applianceAgeGroup?: DeviceAgeGroup;
+};
 
 // ─── Footprint breakdown ──────────────────────────────────────────────────────
 

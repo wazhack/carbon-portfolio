@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { Check, ChevronLeft, Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { ModeSelector } from './ModeSelector';
 import { useAppStore } from '@/lib/store';
-import { OnboardingPayload, DeviceType } from '@/types';
+import { OnboardingPayload, DeviceType, QuestionnaireMode } from '@/types';
 import { cn } from '@/lib/utils';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -25,7 +26,7 @@ interface Question {
   subtitle: string;
   type: 'single' | 'multi';
   options: Option[];
-  skipIf?: (f: Partial<OnboardingPayload>) => boolean;
+  skipIf?: (f: Partial<OnboardingPayload>, mode: QuestionnaireMode) => boolean;
 }
 
 const QUESTIONS: Question[] = [
@@ -50,7 +51,7 @@ const QUESTIONS: Question[] = [
     title: 'Combien de kilomètres par an ?',
     subtitle: 'Distance totale parcourue en voiture',
     type: 'single',
-    skipIf: f => f.carType === 'none',
+    skipIf: (f) => f.carType === 'none',
     options: [
       { value: 2500,  emoji: '🏘️', label: 'Moins de 5 000 km',        desc: 'Usage très occasionnel' },
       { value: 10000, emoji: '🛣️', label: '5 000 – 15 000 km',        desc: 'Trajets domicile-travail réguliers' },
@@ -205,6 +206,35 @@ const QUESTIONS: Question[] = [
       { value: 9,   emoji: '🕗', label: 'Plus de 7 heures', desc: 'Streaming toute la journée' },
     ],
   },
+  // ── Questions mode détaillé uniquement ──────────────────────────────────────
+  {
+    id: 'digitalAgeGroup',
+    sectionId: 'numerique',
+    title: 'Ancienneté de vos équipements numériques',
+    subtitle: 'La fabrication représente 70–80 % de l\'empreinte d\'un appareil électronique',
+    type: 'single',
+    skipIf: (_f, mode) => mode !== 'detailed',
+    options: [
+      { value: 'new',      emoji: '✨', label: 'Moins de 2 ans',   desc: 'Appareils récents, fabrication en cours d\'amortissement' },
+      { value: 'mid',      emoji: '🟢', label: '2 à 5 ans',        desc: 'Dans la durée de vie standard' },
+      { value: 'old',      emoji: '🟡', label: '5 à 10 ans',       desc: 'Plusieurs appareils proches de la fin de vie' },
+      { value: 'very-old', emoji: '🔴', label: 'Plus de 10 ans',   desc: 'Fabrication entièrement amortie, énergie seule reste' },
+    ],
+  },
+  {
+    id: 'applianceAgeGroup',
+    sectionId: 'numerique',
+    title: 'Ancienneté de votre électroménager',
+    subtitle: 'Lave-linge, réfrigérateur, sèche-linge… partagés avec le foyer',
+    type: 'single',
+    skipIf: (_f, mode) => mode !== 'detailed',
+    options: [
+      { value: 'new',      emoji: '✨', label: 'Moins de 3 ans',   desc: 'Appareils récents' },
+      { value: 'mid',      emoji: '🟢', label: '3 à 7 ans',        desc: 'Milieu de vie — fabrication en cours' },
+      { value: 'old',      emoji: '🟡', label: '7 à 12 ans',       desc: 'Proches ou dépassant la durée de vie standard' },
+      { value: 'very-old', emoji: '🔴', label: 'Plus de 12 ans',   desc: 'Fabrication entièrement amortie' },
+    ],
+  },
 ];
 
 // ─── Default form values ───────────────────────────────────────────────────────
@@ -222,12 +252,13 @@ const DEFAULT_FORM: OnboardingPayload = {
   localFoodRatio: 0.25,
   devices: ['smartphone'],
   streamingHoursPerDay: 2,
+  mode: 'quick',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getVisibleQuestions(form: Partial<OnboardingPayload>): Question[] {
-  return QUESTIONS.filter(q => !q.skipIf?.(form));
+function getVisibleQuestions(form: Partial<OnboardingPayload>, mode: QuestionnaireMode): Question[] {
+  return QUESTIONS.filter(q => !q.skipIf?.(form, mode));
 }
 
 function setFormField(
@@ -243,11 +274,16 @@ function setFormField(
 interface Props { userName?: string }
 
 export function QuickStartQuestionnaire({ userName }: Props) {
+  const [mode, setMode] = useState<QuestionnaireMode | null>(null);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<OnboardingPayload>(DEFAULT_FORM);
   const { dispatch } = useAppStore();
 
-  const visible = getVisibleQuestions(form);
+  if (!mode) {
+    return <ModeSelector onSelect={m => { setMode(m); setForm(f => ({ ...f, mode: m })); }} />;
+  }
+
+  const visible = getVisibleQuestions(form, mode);
   const question = visible[step];
   const isLastStep = step === visible.length - 1;
 

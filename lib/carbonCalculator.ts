@@ -9,6 +9,8 @@ import {
   LOCAL_FOOD_REDUCTION_RATE,
   STREAMING_CO2_PER_HOUR,
   DEVICE_ANNUAL_CO2,
+  SHARED_DEVICES,
+  DEVICE_AGE_MULTIPLIER,
   ANNUAL_BUDGET_KG,
 } from './carbonData';
 
@@ -34,10 +36,19 @@ export function calculateDetailedFootprint(profile: OnboardingPayload): Footprin
   const dietBase = DIET_EMISSIONS[profile.dietType] ?? 0;
   const diet = Math.round(dietBase * (1 - profile.localFoodRatio * LOCAL_FOOD_REDUCTION_RATE));
 
-  // 5. Numérique (streaming + appareils)
+  // 5. Numérique + électroménager
+  // Les appareils partagés (TV, lave-linge, frigo…) sont divisés par le nb de personnes
+  // En mode détaillé, un multiplicateur d'âge réduit la part fabrication amortie
   const streaming = Math.round(profile.streamingHoursPerDay * STREAMING_CO2_PER_HOUR * 365);
-  const devicesKg = profile.devices.reduce((s, d) => s + (DEVICE_ANNUAL_CO2[d] ?? 0), 0);
-  const digital = streaming + devicesKg;
+  const digitalMult   = DEVICE_AGE_MULTIPLIER[profile.digitalAgeGroup   ?? 'new'] ?? 1;
+  const applianceMult = DEVICE_AGE_MULTIPLIER[profile.applianceAgeGroup ?? 'new'] ?? 1;
+  const devicesKg = profile.devices.reduce((s, d) => {
+    const base  = DEVICE_ANNUAL_CO2[d] ?? 0;
+    const share = SHARED_DEVICES.has(d) ? base / profile.householdSize : base;
+    const mult  = SHARED_DEVICES.has(d) ? applianceMult : digitalMult;
+    return s + share * mult;
+  }, 0);
+  const digital = streaming + Math.round(devicesKg);
 
   return { car, flight, housing, diet, digital, total: car + flight + housing + diet + digital };
 }

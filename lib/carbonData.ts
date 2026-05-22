@@ -54,6 +54,25 @@ export const LOCAL_FOOD_REDUCTION_RATE = 0.15;
 // ─── Numérique ────────────────────────────────────────────────────────────────
 export const STREAMING_CO2_PER_HOUR = 0.036; // kg CO₂e / h (ADEME 2022)
 
+// Appareils partagés avec le foyer (÷ householdSize dans le calcul)
+export const SHARED_DEVICES = new Set(['tv', 'console', 'washer', 'dryer', 'dishwasher', 'fridge', 'freezer']);
+
+// Durée de vie standard par appareil (années) — source ADEME
+export const DEVICE_LIFESPAN: Record<string, number> = {
+  smartphone: 3, laptop: 5, tablet: 5, tv: 7, console: 7,
+  washer: 11, dryer: 12, dishwasher: 12, fridge: 15, freezer: 15,
+};
+
+// Multiplicateur CO₂ selon l'âge moyen du parc (amortissement fabrication)
+// Logique : CO₂ annuel = fabrication/lifespan + énergie
+// Si entièrement amorti, seule la part énergie reste (~30 % du total)
+export const DEVICE_AGE_MULTIPLIER: Record<string, number> = {
+  'new':       1.0,  // < 2 ans — fabrication + énergie à plein
+  'mid':       0.85, // 2–5 ans — quelques appareils proches de la fin
+  'old':       0.55, // 5–10 ans — majorité partiellement ou totalement amortis
+  'very-old':  0.30, // > 10 ans — fabrication entièrement amortie, énergie seule
+};
+
 // kg CO₂e / an (fabrication amortie + consommation électrique)
 export const DEVICE_ANNUAL_CO2: Record<string, number> = {
   // Numérique
