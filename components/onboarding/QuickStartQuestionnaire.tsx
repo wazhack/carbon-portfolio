@@ -168,7 +168,7 @@ const QUESTIONS: Question[] = [
   {
     id: 'devices',
     sectionId: 'numerique',
-    title: 'Vos équipements connectés',
+    title: 'Vos équipements numériques',
     subtitle: 'Sélectionnez tous vos appareils (fabrication + usage)',
     type: 'multi',
     options: [
@@ -177,6 +177,19 @@ const QUESTIONS: Question[] = [
       { value: 'tablet',     emoji: '📟', label: 'Tablette' },
       { value: 'tv',         emoji: '📺', label: 'Télévision' },
       { value: 'console',    emoji: '🎮', label: 'Console de jeux' },
+    ],
+  },
+  {
+    id: 'devices',
+    sectionId: 'numerique',
+    title: 'Votre électroménager',
+    subtitle: 'Cochez ce que vous possédez — fabrication + consommation électrique',
+    type: 'multi',
+    options: [
+      { value: 'washer',     emoji: '🫧', label: 'Machine à laver' },
+      { value: 'dryer',      emoji: '🌀', label: 'Sèche-linge' },
+      { value: 'dishwasher', emoji: '🍽️', label: 'Lave-vaisselle' },
+      { value: 'fridge',     emoji: '🧊', label: 'Réfrigérateur' },
     ],
   },
   {

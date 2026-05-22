@@ -56,11 +56,17 @@ export const STREAMING_CO2_PER_HOUR = 0.036; // kg CO₂e / h (ADEME 2022)
 
 // kg CO₂e / an (fabrication amortie + consommation électrique)
 export const DEVICE_ANNUAL_CO2: Record<string, number> = {
+  // Numérique
   smartphone: 30,  // amortissement 3 ans
   laptop:     55,  // amortissement 5 ans
   tablet:     28,
   tv:         40,  // amortissement 7 ans
   console:    35,
+  // Électroménager (fabrication amortie + conso électrique, mix FR)
+  washer:     25,  // machine à laver — amortissement 11 ans
+  dryer:      35,  // sèche-linge — conso élevée
+  dishwasher: 25,  // lave-vaisselle — amortissement 12 ans
+  fridge:     28,  // réfrigérateur/congélateur — usage permanent
 };
 
 // ─── Catalogue d'achats ───────────────────────────────────────────────────────
@@ -99,6 +105,23 @@ export const CATEGORIES: Category[] = [
       { id: 'salad',   name: 'Salade composée',          carbonKg: 0.3, emoji: '🥗' },
       { id: 'steak',   name: 'Steak bœuf 200g',         carbonKg: 6,   emoji: '🥩' },
       { id: 'fish',    name: 'Plat de poisson',          carbonKg: 1.8, emoji: '🐟' },
+    ],
+  },
+  {
+    id: 'appliances',
+    name: 'Électroménager',
+    emoji: '🏠',
+    items: [
+      { id: 'washer',      name: 'Machine à laver',       carbonKg: 200, emoji: '🫧' },
+      { id: 'dryer',       name: 'Sèche-linge',           carbonKg: 200, emoji: '🌀' },
+      { id: 'dishwasher',  name: 'Lave-vaisselle',        carbonKg: 230, emoji: '🍽️' },
+      { id: 'fridge',      name: 'Réfrigérateur',         carbonKg: 270, emoji: '🧊' },
+      { id: 'freezer',     name: 'Congélateur',           carbonKg: 180, emoji: '❄️' },
+      { id: 'oven',        name: 'Four électrique',       carbonKg: 120, emoji: '🔥' },
+      { id: 'microwave',   name: 'Micro-ondes',           carbonKg: 60,  emoji: '📡' },
+      { id: 'hob',         name: 'Plaque de cuisson',     carbonKg: 80,  emoji: '🍳' },
+      { id: 'vacuumbot',   name: 'Aspirateur robot',      carbonKg: 50,  emoji: '🤖' },
+      { id: 'aircon',      name: 'Climatiseur',           carbonKg: 300, emoji: '❄️' },
     ],
   },
   {

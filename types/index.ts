@@ -4,7 +4,8 @@ export type CarType = 'none' | 'thermal' | 'hybrid' | 'electric' | 'gpl';
 export type HomeType = 'apartment' | 'house';
 export type EnergyType = 'electric' | 'gas' | 'oil' | 'wood' | 'heatpump';
 export type DietType = 'vegan' | 'vegetarian' | 'flexitarian' | 'carnivore';
-export type DeviceType = 'smartphone' | 'laptop' | 'tablet' | 'tv' | 'console';
+export type DeviceType = 'smartphone' | 'laptop' | 'tablet' | 'tv' | 'console'
+                       | 'washer' | 'dryer' | 'dishwasher' | 'fridge';
 
 // ─── User profile ─────────────────────────────────────────────────────────────
 
