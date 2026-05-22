@@ -8,6 +8,7 @@ import type { LucideIcon } from 'lucide-react';
 
 import { QuickStartQuestionnaire } from '@/components/onboarding/QuickStartQuestionnaire';
 import { ProfileResults } from '@/components/dashboard/ProfileResults';
+import { BenchmarkComparison } from '@/components/dashboard/BenchmarkComparison';
 import { CarbonGauge } from '@/components/dashboard/CarbonGauge';
 import { QuickStats } from '@/components/dashboard/QuickStats';
 import { EmissionsBreakdown } from '@/components/dashboard/EmissionsBreakdown';
@@ -91,7 +92,7 @@ function UserMenu({ name, image }: { name?: string | null; image?: string | null
 export default function Page() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { view, totalSpent, remainingBudget } = useAppStore();
+  const { view, totalSpent, remainingBudget, profile } = useAppStore();
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
 
   const isGuest =
@@ -143,6 +144,7 @@ export default function Page() {
             <CarbonGauge spent={totalSpent} remaining={remainingBudget} />
             <QuickStats />
             <EmissionsBreakdown />
+            {profile && <BenchmarkComparison userKg={profile.initialFootprint} />}
           </div>
         )}
 
