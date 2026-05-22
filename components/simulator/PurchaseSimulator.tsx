@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Search, TrendingDown, Car, CheckCircle, XCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Search, TrendingDown, Car, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/store';
@@ -12,15 +12,13 @@ import { cn } from '@/lib/utils';
 
 type SimState = 'browsing' | 'result' | 'validated' | 'renounced';
 
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return debounced;
-}
+const ALL_ITEMS: PurchaseItem[] = CATEGORIES.flatMap(cat =>
+  cat.items.map(item => ({
+    ...item,
+    categoryId: cat.id,
+    categoryName: cat.name,
+  }))
+);
 
 export function PurchaseSimulator() {
   const { remainingBudget, dispatch } = useAppStore();
@@ -28,59 +26,17 @@ export function PurchaseSimulator() {
   const [activeCat, setActiveCat] = useState(CATEGORIES[0].id);
   const [selected, setSelected] = useState<PurchaseItem | null>(null);
   const [search, setSearch] = useState('');
-  const [apiResults, setApiResults] = useState<PurchaseItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [apiError, setApiError] = useState(false);
 
-  const debouncedSearch = useDebounce(search.trim(), 400);
-  const abortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    if (debouncedSearch.length < 2) {
-      setApiResults([]);
-      setLoading(false);
-      setApiError(false);
-      return;
-    }
-
-    abortRef.current?.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-
-    setLoading(true);
-    setApiError(false);
-
-    fetch(`/api/carbon-search?q=${encodeURIComponent(debouncedSearch)}`, {
-      signal: ctrl.signal,
-    })
-      .then(r => r.json())
-      .then(data => {
-        setApiResults(data.results ?? []);
-        setLoading(false);
-      })
-      .catch(err => {
-        if (err.name !== 'AbortError') {
-          setApiError(true);
-          setLoading(false);
-        }
-      });
-
-    return () => ctrl.abort();
-  }, [debouncedSearch]);
-
-  const isSearching = search.trim().length >= 2;
   const activeCatData = CATEGORIES.find(c => c.id === activeCat)!;
 
-  // While user is typing but debounce hasn't fired yet
-  const isPending = isSearching && search.trim() !== debouncedSearch;
-
-  const displayItems: PurchaseItem[] = isSearching
-    ? apiResults
-    : activeCatData.items.map(item => ({
-        ...item,
-        categoryId: activeCat,
-        categoryName: activeCatData.name,
-      }));
+  const displayItems: PurchaseItem[] =
+    search.trim().length > 1
+      ? ALL_ITEMS.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
+      : activeCatData.items.map(item => ({
+          ...item,
+          categoryId: activeCat,
+          categoryName: activeCatData.name,
+        }));
 
   const handleSelect = (item: PurchaseItem) => {
     setSelected(item);
@@ -97,7 +53,6 @@ export function PurchaseSimulator() {
     setSelected(null);
     setSimState('browsing');
     setSearch('');
-    setApiResults([]);
   };
 
   // ─── Validated screen ───────────────────────────────────────────────────────
@@ -176,21 +131,16 @@ export function PurchaseSimulator() {
           <ArrowLeft className="w-4 h-4" /> Retour
         </button>
 
-        {/* Item card */}
         <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-0">
           <div className="flex items-center gap-4 mb-5">
             <span className="text-5xl" aria-hidden="true">{selected.emoji}</span>
             <div>
               <p className="font-bold text-slate-800 text-lg leading-tight">{selected.name}</p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {selected.categoryName}
-                {selected.unit && <span className="ml-1">· par {selected.unit}</span>}
-              </p>
+              <p className="text-xs text-slate-400 mt-0.5">{selected.categoryName}</p>
             </div>
           </div>
 
           <div className="space-y-2.5">
-            {/* Impact CO2 */}
             <div className="flex items-center justify-between p-3 bg-white rounded-2xl">
               <div className="flex items-center gap-2">
                 <TrendingDown className="w-4 h-4 text-rose-400" />
@@ -199,7 +149,6 @@ export function PurchaseSimulator() {
               <span className="font-bold text-rose-500">{formatCarbonKg(selected.carbonKg)}</span>
             </div>
 
-            {/* Equivalent km */}
             <div className="flex items-center justify-between p-3 bg-white rounded-2xl">
               <div className="flex items-center gap-2">
                 <Car className="w-4 h-4 text-blue-400" />
@@ -211,7 +160,6 @@ export function PurchaseSimulator() {
               </span>
             </div>
 
-            {/* % of budget */}
             <div className="p-3 bg-white rounded-2xl">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-slate-600 font-medium">Part du budget annuel</span>
@@ -235,7 +183,6 @@ export function PurchaseSimulator() {
           )}
         </Card>
 
-        {/* Actions */}
         <div className="grid grid-cols-2 gap-3">
           <Button variant="secondary" size="lg" onClick={() => setSimState('renounced')} fullWidth>
             <XCircle className="w-4 h-4" /> Renoncer
@@ -256,23 +203,18 @@ export function PurchaseSimulator() {
   // ─── Browsing ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      {/* Search input */}
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         <input
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Rechercher dans la Base Carbone® ADEME…"
+          placeholder="Rechercher smartphone, jeans, vol…"
           className="w-full pl-10 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent transition-all"
         />
-        {(loading || isPending) && (
-          <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400 animate-spin" />
-        )}
       </div>
 
-      {/* Category tabs — only when not searching */}
-      {!isSearching && (
+      {search.trim().length <= 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-hide">
           {CATEGORIES.map(cat => (
             <button
@@ -292,66 +234,26 @@ export function PurchaseSimulator() {
         </div>
       )}
 
-      {/* ADEME attribution badge */}
-      {isSearching && !loading && !isPending && (
-        <p className="text-[11px] text-slate-400 text-right">
-          Source : Base Carbone® ADEME — données officielles
-        </p>
-      )}
-
-      {/* Item list */}
       <div className="space-y-2">
-        {isSearching && loading && (
-          <div className="flex flex-col items-center py-12 gap-3">
-            <Loader2 className="w-7 h-7 text-emerald-400 animate-spin" />
-            <p className="text-sm text-slate-400">Recherche dans la Base Carbone®…</p>
-          </div>
-        )}
-
-        {isSearching && !loading && apiError && (
-          <div className="text-center py-10 space-y-2">
-            <p className="text-sm text-slate-500">Impossible de joindre la Base Carbone® ADEME.</p>
-            <p className="text-xs text-slate-400">Vérifiez votre connexion ou réessayez dans un instant.</p>
-          </div>
-        )}
-
-        {isSearching && !loading && !apiError && displayItems.length === 0 && (
+        {displayItems.length === 0 && (
           <div className="text-center py-10 text-slate-300 text-sm">
-            Aucun résultat pour &ldquo;{debouncedSearch}&rdquo;
+            Aucun résultat pour &ldquo;{search}&rdquo;
           </div>
         )}
-
-        {!isSearching && displayItems.length === 0 && (
-          <div className="text-center py-10 text-slate-300 text-sm">
-            Aucun article dans cette catégorie.
-          </div>
-        )}
-
-        {(!isSearching || (!loading && !apiError)) &&
-          displayItems.map((item, idx) => (
-            <Card key={`${item.id}-${idx}`} onClick={() => handleSelect(item)}>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl flex-shrink-0" aria-hidden="true">{item.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{item.name}</p>
-                  <p className="text-[11px] text-slate-400">
-                    {item.categoryName}
-                    {item.unit && <span className="ml-1">· par {item.unit}</span>}
-                  </p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-bold text-slate-700">{formatCarbonKg(item.carbonKg)}</p>
-                </div>
+        {displayItems.map(item => (
+          <Card key={item.id} onClick={() => handleSelect(item)}>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl flex-shrink-0" aria-hidden="true">{item.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-800">{item.name}</p>
+                <p className="text-[11px] text-slate-400">{item.categoryName}</p>
               </div>
-            </Card>
-          ))}
-
-        {/* Featured catalog hint when not searching */}
-        {!isSearching && (
-          <p className="text-center text-[11px] text-slate-300 pt-2">
-            Tapez un mot-clé pour rechercher parmi les milliers de produits de la Base Carbone® ADEME
-          </p>
-        )}
+              <div className="text-right flex-shrink-0">
+                <p className="text-sm font-bold text-slate-700">{formatCarbonKg(item.carbonKg)}</p>
+              </div>
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
   );
